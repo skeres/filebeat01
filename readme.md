@@ -315,5 +315,5 @@ $ ./filebeat -c specific-filebeat-conf.yaml -e
 **Tip** : -e is optional and sends output to standard error instead of the configured log output )  
   
 Go to Menu analytic/discover and select the good range of date to see your datas; ALL DONe !!!  
-** Tip ** : to stop filebeat, type ctrl+c  
+**Tip** : to stop filebeat, type ctrl+c  
 
