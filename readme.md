@@ -1,36 +1,40 @@
 # Poc of FILEBEAT
 
 We will use :  
-- a spring boot application to generate spécific logs
+- A spring boot application to generate spécific logs
 - Elasticsearch and Kibana to store log datas and create dashboard
-- filebeat to ship log datas and push them to Elasticseatch
+- Filebeat to ship log datas and push them to Elasticseatch
 
 ## Run Spring boot Maven project to generate logs
-project path : /home/stephane/projets/projets_gitlabCI/gitlabci_01  
-on **GITLAB** : [repository ](https://gitlab.com/skeres/gitlabci_01.git)  
+Project path : /home/stephane/projets/projets_gitlabCI/gitlabci_01  
+On **GITLAB** : [repository ](https://gitlab.com/skeres/gitlabci_01.git)  
 
 
 
 ## Run Elasticsearch and Kibana using Docker
-project path : /home/stephane/projets/projets_elk/filebeat01
-on github : here !
+Project path : /home/stephane/projets/projets_elk/filebeat01  
+On github : here !
 
-**Create docker volume if not already exists
+**Create docker volume if not already exists**  
 ```
 docker volume create --name elasticsearch-filebeat
 ```
 
-**Create docker network if not already exists
+**Create docker network if not already exists**  
 ```
 docker network create --driver=bridge --ip-range=172.28.1.0/24 --subnet=172.28.0.0/16 --gateway=172.28.1.254 my_custom_network
 ```
 
-**Run Elasticsearch and Kibana
+**Run Elasticsearch and Kibana**  
 ```
 docker-compose -f docker-compose.yaml up -d
 ```
+Or just :  
+```
+docker-compose up -d
+```
 
-**Test Elasticsearch health and access
+**Test Elasticsearch health and access**  
 ```
 curl -XGET "http://localhost:9200/_cluster/health?pretty"
 ```   
@@ -40,17 +44,21 @@ or in a browser :
 http://localhost:9200/
 ```
 
-**Test Kibana access
+**Test Kibana access**  
 ```
 localhost:5601/
 ```
 
-**Stop container without removing them
+**Stop container without removing them**  
 ```
 docker-compose -f docker-compose.yaml stop
 ```
+Or just :   
+```
+docker-compose stop
+```
 
-** Restart container if they already exist
+** Restart container if they already exist**  
 ```
 docker start elastic-filebeat && docker start kibana-filebeat
 ```
@@ -63,8 +71,10 @@ docker-compose down
 ## Install Filebeat on your host
 source  :https://www.elastic.co/guide/en/beats/filebeat/7.17/filebeat-installation-configuration.html  
 
-project path : /home/stephane/filebeat/filebeat-7.17.9-linux-x86_64
-on github : none  
+Project path : /home/stephane/filebeat/filebeat-7.17.9-linux-x86_64
+On github : none  
+
+We're gonna use Filebeat as a process, not like an agent. but the result is the same as if it was running as an agent on a host  
 
 $ mkdir filebeat && cd filebeat  
 $ curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.17.9-linux-x86_64.tar.gz  
@@ -75,8 +85,8 @@ $ cat filebeat.yml
 
 ## How to use Filebeat
 sources :   
-filebeat : https://www.youtube.com/watch?v=ykuw1piMGa4&t=2123s  
-kibane : https://www.youtube.com/watch?v=e1299MWyr98  
+Filebeat : https://www.youtube.com/watch?v=ykuw1piMGa4&t=2123s  
+kibana : https://www.youtube.com/watch?v=e1299MWyr98  
 
 
 **To see a list of available modules**  
@@ -88,31 +98,41 @@ $ ./filebeat test config
 **Test output and Elastcisearch access**  
 $ /filebeat test output
 
-** Set up : **  
-Set up should ony be run once as changes are made in filebeat.yml   
+**Set up :**  
+Set up should only be run once as changes are made in filebeat.yml   
 filebeat will contact the output and start creating all resources needed to ship datas in elasticsearch,   
-like indexes, indexe paterne and so on. It can take up to 1 minute to proceed  
+like indexes, indexes patterns and so on. It can take up to 1 minute to proceed  
 $ vi filebeat.yml and change input configuration to true   
   enabled: true   
 
 $ ./filebeat setup  
 result :  
-*Overwriting ILM policy is disabled. Set `setup.ilm.overwrite: true` for enabling.  
+*Overwriting ILM policy is disabled. Set `setup.ilm.overwrite: true` for enabling.*  
 *Index setup finished*   
-*Loading dashboards (Kibana must be running and reachable)  
-Loaded dashboards  
-Setting up ML using setup --machine-learning is going to be removed in 8.0.0. Please use the ML app instead.  
-See more: https://www.elastic.co/guide/en/machine-learning/current/index.html  
-It is not possble to load ML jobs into an Elasticsearch 8.0.0 or newer using the Beat.  
-Loaded machine learning job configurations  
-Loaded Ingest pipelines  
+*Loading dashboards (Kibana must be running and reachable)*  
+*Loaded dashboards*  
+*Setting up ML using setup --machine-learning is going to be removed in 8.0.0. Please use the ML app instead.*  
+*See more: https://www.elastic.co/guide/en/machine-learning/current/index.html*  
+*It is not possble to load ML jobs into an Elasticsearch 8.0.0 or newer using the Beat.*  
+*Loaded machine learning job configurations*  
+*Loaded Ingest pipelines*  
 
-**Execute filebeat, and ctrl+c to cancel the process
-$ ./filebeat -e
+**Execute filebeat, and ctrl+c to cancel the process**
+$ ./filebeat -e  
 
 
 
 ## Customize log parsing for data
+At this part of the POC, we're gonna customize Filebeat to read the log file generated by   
+the spring boot application above.  
+The log file is at this location : gitlabci_01/logs/application_logback.log  
+
+Launch applicatio and go to your browser at those addresses :
+http://localhost:8080/date  
+http://localhost:8080/hello  
+
+Refresh the browser, and go to see the log content in gitlabci_01/logs/application_logback.log
+
 ** Data format log generated with spring boot looks like this  
 023-02-07 16:10:44 [http-nio-8080-exec-8] DEBUG : project gitlabci|controller|date|2023-02-07 16:10:44   
 2023-02-07 16:10:45 [http-nio-8080-exec-10] DEBUG : project gitlabci|controller|date|2023-02-07 16:10:45  
@@ -233,21 +253,66 @@ Go to "ingest pipeline" to see springboot-pipeline :
 Click on button "Create Filebeat configuration file" and copy/paste content in a new file called : 
 specific-filebeat-conf.yaml
 
-change content
+**change/adapt the content to your configuration**  
 - '<add path to your files here>'   by  - /home/stephane/projets/projets_gitlabCI/gitlabci_01/logs/*.log
  hosts: ["<es_url>"]  by  hosts: ["localhost:9200"]
+
+The final content is below :   
+
+```
+filebeat.inputs:
+
+# filestream is an input for collecting log messages from files.
+- type: filestream
+
+  # Change to true to enable this input configuration.
+  enabled: true
+  
+  # Unique ID among all inputs, an ID is required.
+  id: my-filestream-id
+  
+  # Paths that should be crawled and fetched. Glob based paths.
+  paths:
+    - /home/stephane/projets/projets_gitlabCI/gitlabci_01/logs/*.log
+    #- c:\other\logs\*
+  multiline:
+    pattern: '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}'
+    match: after
+    negate: true
+
+processors:
+- add_locale: ~
+
+output.elasticsearch:
+  hosts: ["localhost:9200"]
+  index: "springboot"
+  pipeline: "springboot-pipeline"
+
+setup:
+  template.enabled: false
+  ilm.enabled: false
+  
+# Sets log level. The default log level is info.
+# Available log levels are: error, warning, info, debug
+logging.level: debug
+
+# At debug level, you can selectively enable logging only for some components.
+# To enable all selectors use ["*"]. Examples of other selectors are "beat",
+# "publisher", "service".
+#logging.selectors: ["*"]
+```
 
 
 ## Run filebeat again
 
-$ ./filebeat -c specific-filebeat-conf.yaml test config
-$ ./filebeat -c specific-filebeat-conf.yaml test output
-$ ./filebeat -c specific-filebeat-conf.yaml setup
+$ ./filebeat -c specific-filebeat-conf.yaml test config  
+$ ./filebeat -c specific-filebeat-conf.yaml test output  
+$ ./filebeat -c specific-filebeat-conf.yaml setup  
 
-** Tip ** : rm -rf data directory before launching filebeat if you work on existing datas  
+**Tip** : rm -rf data directory before launching filebeat if you work on existing datas  
 Execute :  
 $ ./filebeat -c specific-filebeat-conf.yaml -e  
-** Tip** : -e is optional and sends output to standard error instead of the configured log output )  
+**Tip** : -e is optional and sends output to standard error instead of the configured log output )  
   
 Go to Menu analytic/discover and select the good range of date to see your datas; ALL DONe !!!  
 ** Tip ** : to stop filebeat, type ctrl+c  
