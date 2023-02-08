@@ -1,0 +1,49 @@
+version: '3.7'
+
+services:
+
+  # Elasticsearch Docker Images: https://www.docker.elastic.co/
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: elastic-filebeat
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - elasticsearch-filebeat:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      my_custom_network:
+        ipv4_address: 172.28.0.2
+
+  kibana:
+    container_name: kibana-filebeat
+    image: docker.elastic.co/kibana/kibana:7.17.9
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    networks:
+      my_custom_network:
+        ipv4_address: 172.28.0.4
+    depends_on:
+      - elasticsearch
+
+volumes:
+  elasticsearch-filebeat:
+    external: true
+
+networks:
+  my_custom_network:
+    external: true
